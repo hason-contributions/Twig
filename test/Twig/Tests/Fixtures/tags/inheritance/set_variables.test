@@ -1,0 +1,27 @@
+--TEST--
+set variables "extends" tag
+--TEMPLATE--
+{% set foo = "foo" %}
+{% extends "layout.twig" %}
+{% set bar = "bar" %}
+
+{% block content %}
+{{ foo}}
+{% endblock %}
+--TEMPLATE(layout.twig)--
+{% extends "base.twig" %}
+{% set bar = "bar" %}
+--TEMPLATE(base.twig)--
+{% block header %}
+{{ foo}}
+{% endblock %}
+
+{% block content %}
+{{ bar }}
+{% endblock %}
+--DATA--
+return array()
+--EXPECT--
+foo
+
+bar
