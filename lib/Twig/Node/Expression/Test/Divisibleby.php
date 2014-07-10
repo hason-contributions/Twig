@@ -22,12 +22,21 @@ class Twig_Node_Expression_Test_Divisibleby extends Twig_Node_Expression_Test
 {
     public function compile(Twig_Compiler $compiler)
     {
+        $arguments = $this->getNode('arguments');
         $compiler
-            ->raw('(0 == ')
+            ->raw('(0 == twig_modulo(')
             ->subcompile($this->getNode('node'))
-            ->raw(' % ')
-            ->subcompile($this->getNode('arguments')->getNode(0))
-            ->raw(')')
+            ->raw(', ')
+            ->subcompile($arguments->getNode(0))
         ;
+
+        if ($arguments->hasNode(1)) {
+            $compiler
+                ->raw(', ')
+                ->subcompile($arguments->getNode(1))
+            ;
+        }
+
+        $compiler->raw('))');
     }
 }

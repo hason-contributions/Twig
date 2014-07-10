@@ -156,6 +156,7 @@ class Twig_Extension_Core extends Twig_Extension
             new Twig_SimpleFilter('number_format', 'twig_number_format_filter', array('needs_environment' => true)),
             new Twig_SimpleFilter('abs', 'abs'),
             new Twig_SimpleFilter('round', 'twig_round'),
+            new Twig_SimpleFilter('modulo', 'twig_modulo'),
 
             // encoding
             new Twig_SimpleFilter('url_encode', 'twig_urlencode_filter'),
@@ -1497,3 +1498,26 @@ function twig_array_batch($items, $size, $fill = null)
 
     return $result;
 }
+
+/**
+ * Returns the modulo for floating point numbers
+ *
+ * @param int|float $divident The dividend
+ * @param int|float $divisor  The divisor
+ * @param bool      $float    S
+ *
+ * @return int|float
+ */
+function twig_modulo($divident, $divisor, $float = false)
+{
+    if (!$float || (is_int($divident) && is_int($divisor))) {
+        return 0 === (int) $divisor ? (int) $divident : $divident % $divisor;
+    }
+
+    $dividentDecimal = ($pos = strpos($divident, '.')) ? strlen($divident) - $pos - 1 : 0;
+    $divisorDecimal = ($pos = strpos($divisor, '.')) ? strlen($divisor) - $pos - 1 : 0;
+    $multiplier = pow(10, max($dividentDecimal, $divisorDecimal));
+
+    return (($multiplier*$divident) % ($multiplier*$divisor))/$multiplier;
+}
+
