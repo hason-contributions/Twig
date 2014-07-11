@@ -1,0 +1,14 @@
+--TEST--
+Exception for unknown macro in rewritten variable
+--TEMPLATE--
+{% import _self as macros %}
+
+{% macro foo() %}
+{% endmacro %}
+
+{% set macros = '' %}
+{{ macros.foo() }}
+--DATA--
+return array()
+--EXCEPTION--
+Twig_Error_Runtime: Impossible to invoke a method ("foo") on a string variable ("") in "index.twig" at line 8

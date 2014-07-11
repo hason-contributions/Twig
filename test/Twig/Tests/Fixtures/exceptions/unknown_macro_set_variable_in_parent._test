@@ -1,0 +1,21 @@
+--TEST--
+Exception for unknown macro in rewritten variable
+--TEMPLATE--
+{% extends 'parent.twig' %}
+{% import _self as macros %}
+
+{% macro foo() %}
+{% endmacro %}
+
+{% block foo %}
+    {{ parent() }}
+    {{ macros.foo() }}
+{% endblock %}
+--TEMPLATE(parent.twig)--
+{% block foo %}
+    {% set macros = [] %}
+{% endblock %}
+--DATA--
+return array()
+--EXCEPTION--
+Twig_Error_Runtime: Macro "foo" is not defined in the template "index.twig" in "index.twig" at line 3.
