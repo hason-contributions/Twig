@@ -187,62 +187,36 @@ class Twig_Error extends Exception
     {
         $template = null;
         $templateClass = null;
+        $isLineNoDefined = $this->lineno > -1;
 
-        if (version_compare(phpversion(), '5.3.6', '>=')) {
-            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS | DEBUG_BACKTRACE_PROVIDE_OBJECT);
-        } else {
-            $backtrace = debug_backtrace();
-        }
-
-        foreach ($backtrace as $trace) {
-            if (isset($trace['object']) && $trace['object'] instanceof Twig_Template && 'Twig_Template' !== get_class($trace['object'])) {
-                $currentClass = get_class($trace['object']);
-                $isEmbedContainer = 0 === strpos($templateClass, $currentClass);
-                if (null === $this->filename || ($this->filename == $trace['object']->getTemplateName() && !$isEmbedContainer)) {
-                    $template = $trace['object'];
-                    $templateClass = get_class($trace['object']);
-                }
-            }
-        }
-
-        // update template filename
-        if (null !== $template && null === $this->filename) {
-            $this->filename = $template->getTemplateName();
-        }
-
-        if (null === $template || $this->lineno > -1) {
-            return;
-        }
-
-        $r = new ReflectionObject($template);
-        $file = $r->getFileName();
-
-        // hhvm has a bug where eval'ed files comes out as the current directory
-        if (is_dir($file)) {
-            $file = '';
-        }
-
-        $exceptions = array($e = $this);
-        while (($e instanceof self || method_exists($e, 'getPrevious')) && $e = $e->getPrevious()) {
-            $exceptions[] = $e;
-        }
-
-        while ($e = array_pop($exceptions)) {
-            $traces = $e->getTrace();
-            while ($trace = array_shift($traces)) {
-                if (!isset($trace['file']) || !isset($trace['line']) || $file != $trace['file']) {
+        $e = $this;
+        do {
+            $traces = array_reverse($e->getTrace());
+            foreach ($traces as $key => $trace) {
+                if (!isset($trace['class']) || 'Twig_Template' === $trace['class'] || !is_subclass_of($trace['class'], 'Twig_Template')) {
                     continue;
                 }
 
-                foreach ($template->getDebugInfo() as $codeLine => $templateLine) {
-                    if ($codeLine <= $trace['line']) {
-                        // update template line
-                        $this->lineno = $templateLine;
+                $isEmbedContainer = 0 === strpos($templateClass, $trace['class']);
+                $object = unserialize(sprintf('O:%d:"%s":0:{}', strlen($trace['class']), $trace['class']));
+                if (null === $this->filename || (!$isEmbedContainer && $this->filename === $object->getTemplateName())) {
+                    $template = $object;
+                    $templateClass = $trace['class'];
+                    $this->filename = $template->getTemplateName();
+                }
 
-                        return;
+                if (null === $template || $isLineNoDefined || !isset($traces[$key + 1]['line'])) {
+                    continue;
+                }
+
+                $line = $traces[$key + 1]['line'];
+                foreach ($template->getDebugInfo() as $codeLine => $templateLine) {
+                    if ($codeLine <= $line) {
+                        $this->lineno = $templateLine;
+                        break;
                     }
                 }
             }
-        }
+        } while (($e instanceof self || method_exists($e, 'getPrevious')) && $e = $e->getPrevious());
     }
 }
