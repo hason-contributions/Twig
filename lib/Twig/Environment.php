@@ -1162,6 +1162,39 @@ class Twig_Environment
         return array_keys($alternatives);
     }
 
+    /**
+     * @param $file
+     * @param $content
+     *
+     * @throws RuntimeException
+     */
+    public function writeCacheFile($file, $content)
+    {
+        $dir = dirname($file);
+        if (!is_dir($dir)) {
+            if (false === @mkdir($dir, 0777, true)) {
+                clearstatcache(false, $dir);
+                if (!is_dir($dir)) {
+                    throw new RuntimeException(sprintf('Unable to create the cache directory (%s).', $dir));
+                }
+            }
+        } elseif (!is_writable($dir)) {
+            throw new RuntimeException(sprintf('Unable to write in the cache directory (%s).', $dir));
+        }
+
+        $tmpFile = tempnam($dir, basename($file));
+        if (false !== @file_put_contents($tmpFile, $content)) {
+            // rename does not work on Win32 before 5.2.6
+            if (@rename($tmpFile, $file) || (@copy($tmpFile, $file) && unlink($tmpFile))) {
+                @chmod($file, 0666 & ~umask());
+
+                return;
+            }
+        }
+
+        throw new RuntimeException(sprintf('Failed to write cache file "%s".', $file));
+    }
+
     protected function initGlobals()
     {
         $globals = array();
@@ -1263,32 +1296,5 @@ class Twig_Environment
             $this->unaryOperators = array_merge($this->unaryOperators, $operators[0]);
             $this->binaryOperators = array_merge($this->binaryOperators, $operators[1]);
         }
-    }
-
-    protected function writeCacheFile($file, $content)
-    {
-        $dir = dirname($file);
-        if (!is_dir($dir)) {
-            if (false === @mkdir($dir, 0777, true)) {
-                clearstatcache(false, $dir);
-                if (!is_dir($dir)) {
-                    throw new RuntimeException(sprintf('Unable to create the cache directory (%s).', $dir));
-                }
-            }
-        } elseif (!is_writable($dir)) {
-            throw new RuntimeException(sprintf('Unable to write in the cache directory (%s).', $dir));
-        }
-
-        $tmpFile = tempnam($dir, basename($file));
-        if (false !== @file_put_contents($tmpFile, $content)) {
-            // rename does not work on Win32 before 5.2.6
-            if (@rename($tmpFile, $file) || (@copy($tmpFile, $file) && unlink($tmpFile))) {
-                @chmod($file, 0666 & ~umask());
-
-                return;
-            }
-        }
-
-        throw new RuntimeException(sprintf('Failed to write cache file "%s".', $file));
     }
 }

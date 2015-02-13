@@ -565,6 +565,13 @@ abstract class Twig_Template implements Twig_TemplateInterface
      */
     protected function getCacheForClass($class)
     {
+        if ($this->env->getCache() && file_exists($file = $this->env->getCache().'/classes/'.strtr($class, '\\', '_').'.php')) {
+            $data = include $file;
+            if ($class === $data['class'] && file_exists($data['filename']) && filemtime($file) <= filemtime($data['filename'])) {
+                return $data['cache'];
+            }
+        }
+
         $cache = array('methods' => array(), 'properties' => array());
 
         $methods = get_class_methods($class);
@@ -589,6 +596,23 @@ abstract class Twig_Template implements Twig_TemplateInterface
             $properties = array_combine($properties, $properties);
             $cache['properties'] = array_flip(preg_replace('/((?<=[a-z]|\d)[A-Z]|(?<!^)[A-Z](?=[a-z]))/', '_\\1', $properties));
             $cache['properties'] = array_change_key_case(array_diff_key($cache['properties'], $properties));
+        }
+
+        if ($this->env->getCache()) {
+            if (!isset($reflection)) {
+                $reflection = new ReflectionClass($class);
+            }
+
+            $data = array(
+                'class' => $class,
+                'filename' => $reflection->getFileName(),
+                'cache' => $cache,
+            );
+
+            try {
+                $this->env->writeCacheFile($file, "<?php\nreturn ".var_export($data, true).";\n");
+            } catch (RuntimeException $e) {
+            }
         }
 
         return $cache;
