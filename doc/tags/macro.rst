@@ -1,6 +1,9 @@
 ``macro``
 =========
 
+.. versionadded:: 1.12
+    Support for default argument values was added in Twig 1.12.
+
 Macros are comparable with functions in regular programming languages. They
 are useful to put often used HTML idioms into reusable elements to not repeat
 yourself.
@@ -9,16 +12,22 @@ Here is a small example of a macro that renders a form element:
 
 .. code-block:: jinja
 
-    {% macro input(name, value, type, size) %}
-        <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+    {% macro input(name, value="", type="text", size=20) %}
+        <input type="{{ type }}" name="{{ name }}" value="{{ value|e }}" size="{{ size }}" />
     {% endmacro %}
 
 Macros differs from native PHP functions in a few ways:
 
-* Default argument values are defined by using the ``default`` filter in the
-  macro body;
-
 * Arguments of a macro are always optional.
+
+.. note::
+    Before Twig 1.12, renaming allows you to simulate inheritance by calling the "parent" block:
+
+    .. code-block:: jinja
+
+        {% macro input(name, value, type, size) %}
+            <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+        {% endmacro %}
 
 But as with PHP functions, macros don't have access to the current template
 variables.
@@ -68,11 +77,11 @@ import it locally:
 
 .. code-block:: jinja
 
-    {% macro input(name, value, type, size) %}
-        <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+    {% macro input(name, value, type='text', size=20) %}
+        <input type="{{ type }}" name="{{ name }}" value="{{ value|e }}" size="{{ size }}" />
     {% endmacro %}
 
-    {% macro wrapped_input(name, value, type, size) %}
+    {% macro wrapped_input(name, value, type='text', size=20) %}
         {% import _self as forms %}
 
         <div class="field">

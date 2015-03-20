@@ -93,7 +93,7 @@ access the variable attribute:
     don't put the braces around them.
 
 If a variable or attribute does not exist, you will receive a ``null`` value
-when the ``strict_variables`` option is set to ``false``; alternatively, if ``strict_variables`` 
+when the ``strict_variables`` option is set to ``false``; alternatively, if ``strict_variables``
 is set, Twig will throw an error (see :ref:`environment options<environment_options>`).
 
 .. sidebar:: Implementation
@@ -505,9 +505,17 @@ A macro is defined via the :doc:`macro<tags/macro>` tag. Here is a small example
 
 .. code-block:: jinja
 
-    {% macro input(name, value, type, size) %}
-        <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+    {% macro input(name, value="", type="text", size=20) %}
+        <input type="{{ type }}" name="{{ name }}" value="{{ value|e }}" size="{{ size }}" />
     {% endmacro %}
+
+.. note::
+
+    .. code-block:: jinja
+
+        {% macro input(name, value, type, size) %}
+            <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|e }}" size="{{ size|default(20) }}" />
+        {% endmacro %}
 
 Macros can be defined in any template, and need to be "imported" via the
 :doc:`import<tags/import>` tag before being used:
@@ -537,9 +545,7 @@ macro call:
 
 .. code-block:: jinja
 
-    {% macro input(name, value = "", type = "text", size = 20) %}
-        <input type="{{ type }}" name="{{ name }}" value="{{ value|e }}" size="{{ size }}" />
-    {% endmacro %}
+
 
 .. _twig-expressions:
 
